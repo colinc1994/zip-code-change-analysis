@@ -43,7 +43,7 @@ zc_change_00_10 = lapply(sheets_temp,function(i){
   colnames(temp) = colnames(temp) %>% make.names()
   temp = temp %>% 
     mutate(across(everything(), as.character),
-           State = i)
+           State = i) 
   
   temp %>%  return()
 }) %>% 
@@ -83,4 +83,18 @@ zc_change_df = list(zc_change_00_10,
   do.call(bind_rows,.) %>% 
   mutate(New.County = ifelse(is.na(New.County),County,New.County), # the new county variable was just county for some states
          State = State %>% gsub("-","",.)) # need to remove - which was in there for some reason
+
+# do a freq count of the states
+zc_change_df %>% 
+  select(State) %>% table() %>% sort()
+# FL, CA, KY were the top three in changes
+
+# make an indicator whether the change was to establish a new zip code for a delivery are
+zc_change_df = zc_change_df %>% 
+  mutate(est_for_del = ifelse(grepl("Establish a new ZIP Code for a delivery area.",
+                                    Comments),"Yes","No")) %>% 
+  mutate(new_date = as.Date(Effective.Date %>% as.numeric(), origin = "1899-12-30") %>% as.character()) %>% 
+  mutate(new_date = ifelse(grepl("-",Effective.Date),
+                           Effective.Date %>% lubridate::ymd() %>% as.character(),
+                           new_date))
 
