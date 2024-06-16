@@ -20,7 +20,7 @@ sheets_temp = readxl::excel_sheets(file.path("Data",
 zc_change_90_00 = lapply(sheets_temp,function(i){
 temp = read_excel(file.path("Data",list.files("Data/",pattern = "1990-2000")[1]),
                   sheet = i,)
-temp = temp %>% na.omit()
+#temp = temp %>% na.omit()
 colnames(temp) = colnames(temp) %>% make.names()
 temp = temp %>% 
   mutate(across(everything(), as.character),
@@ -39,7 +39,7 @@ sheets_temp = readxl::excel_sheets(file.path("Data",
 zc_change_00_10 = lapply(sheets_temp,function(i){
   temp = read_excel(file.path("Data",list.files("Data/",pattern = "2000-2010")[1]),
                     sheet = i,)
-  temp = temp %>% na.omit()
+  #temp = temp %>% na.omit()
   colnames(temp) = colnames(temp) %>% make.names()
   temp = temp %>% 
     mutate(across(everything(), as.character),
@@ -58,7 +58,7 @@ sheets_temp = readxl::excel_sheets(file.path("Data",
 zc_change_10_20 = lapply(sheets_temp,function(i){
   temp = read_excel(file.path("Data",list.files("Data/",pattern = "2010-2020")[1]),
                     sheet = i,)
-  temp = temp %>% na.omit()
+  #temp = temp %>% na.omit()
   colnames(temp) = colnames(temp) %>% make.names()
   temp = temp %>% 
     mutate(across(everything(), as.character),
@@ -84,10 +84,6 @@ zc_change_df = list(zc_change_00_10,
   mutate(New.County = ifelse(is.na(New.County),County,New.County), # the new county variable was just county for some states
          State = State %>% gsub("-","",.)) # need to remove - which was in there for some reason
 
-# do a freq count of the states
-zc_change_df %>% 
-  select(State) %>% table() %>% sort()
-# FL, CA, KY were the top three in changes
 
 # make an indicator whether the change was to establish a new zip code for a delivery are
 zc_change_df = zc_change_df %>% 
@@ -96,5 +92,14 @@ zc_change_df = zc_change_df %>%
   mutate(new_date = as.Date(Effective.Date %>% as.numeric(), origin = "1899-12-30") %>% as.character()) %>% 
   mutate(new_date = ifelse(grepl("-",Effective.Date),
                            Effective.Date %>% lubridate::ymd() %>% as.character(),
-                           new_date))
+                           new_date)) %>% 
+  filter(!(is.na(Old.ZIP.Code)&is.na(New.ZIP.Code))) %>% 
+  mutate(check_brand_new = ifelse(is.na(Old.ZIP.Code)&!is.na(New.ZIP.Code),
+                                  "Yes","No")) %>% 
+  mutate(effect_year = new_date %>% lubridate::year())
+
+# do a freq count of the states
+zc_change_df %>% 
+  select(State) %>% table() %>% sort()
+# FL, CA, KY were the top three in changes
 
